@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteTaker - Your Personal Note Manager</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            flex: 1;
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            height: fit-content;
+        }
+
+        .note-editor {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .new-note-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .new-note-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .generate-note-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .generate-note-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .notes-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .note-item {
+            padding: 15px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .note-item:hover {
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .note-item.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+
+        .note-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .note-preview {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .note-date {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .editor-title {
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-save {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+            line-height: 1.6;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .sidebar, .note-editor {
+                padding: 20px;
+            }
+        }
+
+        /* Custom Scrollbar */
+        .notes-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .notes-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .notes-list::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+
+        .notes-list::-webkit-scrollbar-thumb:hover {
+            background: #5a6fd8;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: #333;
+            margin: 0;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #333;
+        }
+
+        .generate-form {
+            margin-bottom: 25px;
+        }
+
+        .generated-preview {
+            display: none;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .generated-preview.show {
+            display: block;
+        }
+
+        .preview-header {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #495057;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 10px;
+        }
+
+        .preview-field {
+            margin-bottom: 15px;
+        }
+
+        .preview-label {
+            font-weight: 600;
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .preview-value {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            min-height: 20px;
+        }
+
+        .preview-tags {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .preview-tag {
+            background: #667eea;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .btn-generate:hover {
+            background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+        }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 NoteTaker</h1>
+            <p>Organize your thoughts, capture your ideas</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search notes...">
+                <button class="new-note-btn" id="newNoteBtn">✨ New Note</button>
+                <button class="generate-note-btn" id="generateNoteBtn">🤖 Generate Note</button>
+                
+                <div class="notes-list" id="notesList">
+                    <div class="loading">Loading notes...</div>
+                </div>
+            </div>
+
+            <div class="note-editor">
+                <div class="editor-header">
+                    <h2 class="editor-title" id="editorTitle">Select a note to edit</h2>
+                    <div class="editor-actions" id="editorActions" style="display: none;">
+                        <select id="translateLang" class="form-input" style="width:140px; padding:6px;">
+                            <option value="Chinese">Chinese</option>
+                            <option value="English">English</option>
+                            <option value="Japanese">Japanese</option>
+                        </select>
+                        <button class="btn" id="translateBtn">🌐 Translate</button>
+                        <button class="btn btn-save" id="saveBtn">💾 Save</button>
+                        <button class="btn btn-delete" id="deleteBtn">🗑️ Delete</button>
+                    </div>
+                </div>
+
+                <div id="messageArea"></div>
+
+                <div id="editorForm" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label" for="noteTitle">Title</label>
+                        <input type="text" class="form-input" id="noteTitle" placeholder="Enter note title...">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="noteContent">Content</label>
+                        <textarea class="form-textarea" id="noteContent" placeholder="Start writing your note..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="noteTags">Tags (comma-separated)</label>
+                        <input type="text" class="form-input" id="noteTags" placeholder="e.g. work, personal, idea">
+                    </div>
+
+                    <div class="form-group" style="display:flex; gap:10px;">
+                        <div style="flex:1;">
+                            <label class="form-label" for="noteDate">Event Date</label>
+                            <input type="date" class="form-input" id="noteDate">
+                        </div>
+                        <div style="flex:1;">
+                            <label class="form-label" for="noteTime">Event Time</label>
+                            <input type="time" class="form-input" id="noteTime">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="empty-state" id="emptyState">
+                    <h3>Welcome to NoteTaker!</h3>
+                    <p>Select an existing note or create a new one to get started.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate Note Modal -->
+    <div id="generateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🤖 Generate Note with AI</h2>
+                <span class="close" id="closeModal">&times;</span>
+            </div>
+            
+            <div class="generate-form">
+                <div class="form-group">
+                    <label class="form-label" for="generateInput">Describe what you want to note (in natural language):</label>
+                    <textarea class="form-textarea" id="generateInput" 
+                             placeholder="e.g. 'Badminton tomorrow 5pm at PolyU' or 'Learn Python programming and Docker containers'" 
+                             style="min-height: 120px;"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="generateLanguage">Output Language:</label>
+                    <select id="generateLanguage" class="form-input">
+                        <option value="English">English</option>
+                        <option value="Chinese">Chinese</option>
+                        <option value="Japanese">Japanese</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="generated-preview" id="generatedPreview">
+                <div class="preview-header">📝 Generated Note Preview</div>
+                
+                <div class="preview-field">
+                    <div class="preview-label">Title:</div>
+                    <div class="preview-value" id="previewTitle"></div>
+                </div>
+                
+                <div class="preview-field">
+                    <div class="preview-label">Content:</div>
+                    <div class="preview-value" id="previewContent"></div>
+                </div>
+                
+                <div class="preview-field">
+                    <div class="preview-label">Tags:</div>
+                    <div class="preview-tags" id="previewTags"></div>
+                </div>
+                
+                <div class="preview-field" id="previewDateField" style="display: none;">
+                    <div class="preview-label">Event Date:</div>
+                    <div class="preview-value" id="previewDate"></div>
+                </div>
+                
+                <div class="preview-field" id="previewTimeField" style="display: none;">
+                    <div class="preview-label">Event Time:</div>
+                    <div class="preview-value" id="previewTime"></div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-cancel" id="cancelGenerate">Cancel</button>
+                <button class="btn btn-generate" id="generateBtn">Generate</button>
+                <button class="btn btn-confirm" id="confirmGenerate" style="display: none;">Save Note</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class NoteTaker {
+            constructor() {
+                this.notes = [];
+                this.currentNote = null;
+                this.isLoading = false;
+                this.generatedNoteData = null;
+                this.init();
+            }
+
+            async init() {
+                this.bindEvents();
+                await this.loadNotes();
+            }
+
+            bindEvents() {
+                document.getElementById('newNoteBtn').addEventListener('click', () => this.createNewNote());
+                document.getElementById('generateNoteBtn').addEventListener('click', () => this.openGenerateModal());
+                document.getElementById('saveBtn').addEventListener('click', () => this.saveNote());
+                document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
+                document.getElementById('translateBtn').addEventListener('click', () => this.translateCurrentNote());
+                document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
+                
+                // Generate modal events
+                document.getElementById('closeModal').addEventListener('click', () => this.closeGenerateModal());
+                document.getElementById('cancelGenerate').addEventListener('click', () => this.closeGenerateModal());
+                document.getElementById('generateBtn').addEventListener('click', () => this.generateNote());
+                document.getElementById('confirmGenerate').addEventListener('click', () => this.confirmGeneratedNote());
+                
+                // Close modal when clicking outside
+                document.getElementById('generateModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'generateModal') {
+                        this.closeGenerateModal();
+                    }
+                });
+                
+                // Auto-save on content change (debounced)
+                let saveTimeout;
+                const autoSave = () => {
+                    clearTimeout(saveTimeout);
+                    saveTimeout = setTimeout(() => {
+                        if (this.currentNote && this.currentNote.id) {
+                            this.saveNote(true);
+                        }
+                    }, 2000);
+                };
+                
+                document.getElementById('noteTitle').addEventListener('input', autoSave);
+                document.getElementById('noteContent').addEventListener('input', autoSave);
+                document.getElementById('noteTags')?.addEventListener('input', autoSave);
+                document.getElementById('noteDate')?.addEventListener('change', autoSave);
+                document.getElementById('noteTime')?.addEventListener('change', autoSave);
+            }
+
+            async loadNotes() {
+                this.isLoading = true;
+                this.showMessage('Loading notes...', 'loading');
+                
+                try {
+                    const response = await fetch('/api/notes');
+                    if (!response.ok) throw new Error('Failed to load notes');
+                    
+                    this.notes = await response.json();
+                    this.renderNotesList();
+                    this.hideMessage();
+                } catch (error) {
+                    this.showMessage(`Error loading notes: ${error.message}`, 'error');
+                } finally {
+                    this.isLoading = false;
+                }
+            }
+
+            renderNotesList() {
+                const notesList = document.getElementById('notesList');
+                
+                if (this.notes.length === 0) {
+                    notesList.innerHTML = '<div class="empty-state"><p>No notes yet. Create your first note!</p></div>';
+                    return;
+                }
+
+                notesList.innerHTML = this.notes.map(note => `
+                    <div class="note-item ${this.currentNote && this.currentNote.id === note.id ? 'active' : ''}" 
+                         data-note-id="${note.id}" onclick="noteTaker.selectNote(${note.id})">
+                        <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}</div>
+                        <div class="note-preview">${this.escapeHtml(note.content || 'No content')}</div>
+                        <div class="note-date">${this.formatDate(note.updated_at)} ${note.event_date ? ' • ' + note.event_date : ''} ${note.event_time ? note.event_time : ''}</div>
+                        ${note.tags && note.tags.length ? `<div class="note-tags">${note.tags.map(t=>`<span>#${this.escapeHtml(t)}</span>`).join(' ')}</div>` : ''}
+                    </div>
+                `).join('');
+            }
+
+            async selectNote(noteId) {
+                const note = this.notes.find(n => n.id === noteId);
+                if (!note) return;
+
+                this.currentNote = note;
+                this.showEditor();
+                this.renderNotesList(); // Re-render to update active state
+                
+                document.getElementById('noteTitle').value = note.title || '';
+                document.getElementById('noteContent').value = note.content || '';
+                document.getElementById('noteTags').value = (note.tags && note.tags.length) ? note.tags.join(', ') : '';
+                document.getElementById('noteDate').value = note.event_date || '';
+                document.getElementById('noteTime').value = note.event_time || '';
+                document.getElementById('editorTitle').textContent = note.title || 'Untitled Note';
+            }
+
+            createNewNote() {
+                this.currentNote = {
+                    id: null,
+                    title: '',
+                    content: '',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+                
+                this.showEditor();
+                document.getElementById('noteTitle').value = '';
+                document.getElementById('noteContent').value = '';
+                document.getElementById('noteTags').value = '';
+                document.getElementById('noteDate').value = '';
+                document.getElementById('noteTime').value = '';
+                document.getElementById('editorTitle').textContent = 'New Note';
+                document.getElementById('noteTitle').focus();
+                
+                // Remove active state from all notes
+                document.querySelectorAll('.note-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+            }
+
+            showEditor() {
+                document.getElementById('emptyState').style.display = 'none';
+                document.getElementById('editorForm').style.display = 'block';
+                document.getElementById('editorActions').style.display = 'flex';
+
+                // Hide delete button for new notes (no id)
+                const deleteBtn = document.getElementById('deleteBtn');
+                if (this.currentNote && this.currentNote.id) {
+                    deleteBtn.style.display = '';
+                } else {
+                    deleteBtn.style.display = 'none';
+                }
+            }
+
+            hideEditor() {
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('editorForm').style.display = 'none';
+                document.getElementById('editorActions').style.display = 'none';
+                document.getElementById('editorTitle').textContent = 'Select a note to edit';
+                this.currentNote = null;
+            }
+
+            async saveNote(isAutoSave = false) {
+                if (!this.currentNote) return;
+
+                const title = document.getElementById('noteTitle').value.trim();
+                const content = document.getElementById('noteContent').value.trim();
+                const tagsRaw = document.getElementById('noteTags').value.trim();
+                const tags = tagsRaw ? tagsRaw.split(',').map(t=>t.trim()).filter(Boolean) : [];
+                const event_date = document.getElementById('noteDate').value || null;
+                const event_time = document.getElementById('noteTime').value || null;
+
+                if (!title && !content) {
+                    if (!isAutoSave) {
+                        this.showMessage('Please enter a title or content', 'error');
+                    }
+                    return;
+                }
+
+                try {
+                    const noteData = {
+                        title: title || 'Untitled',
+                        content: content,
+                        tags: tags,
+                        event_date: event_date,
+                        event_time: event_time
+                    };
+
+                    let response;
+                    if (this.currentNote.id) {
+                        // Update existing note
+                        response = await fetch(`/api/notes/${this.currentNote.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(noteData)
+                        });
+                    } else {
+                        // Create new note
+                        response = await fetch('/api/notes', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(noteData)
+                        });
+                    }
+
+                    if (!response.ok) throw new Error('Failed to save note');
+
+                    const savedNote = await response.json();
+                    this.currentNote = savedNote;
+                    
+                    // Update notes list
+                    const existingIndex = this.notes.findIndex(n => n.id === savedNote.id);
+                    if (existingIndex >= 0) {
+                        this.notes[existingIndex] = savedNote;
+                    } else {
+                        this.notes.unshift(savedNote);
+                    }
+                    
+                    this.renderNotesList();
+                    document.getElementById('editorTitle').textContent = savedNote.title;
+                    
+                    if (!isAutoSave) {
+                        this.showMessage('Note saved successfully!', 'success');
+                    }
+                } catch (error) {
+                    this.showMessage(`Error saving note: ${error.message}`, 'error');
+                }
+            }
+
+            async translateCurrentNote() {
+                if (!this.currentNote || !this.currentNote.id) {
+                    this.showMessage('Please save the note before translating.', 'error');
+                    return;
+                }
+
+                const lang = document.getElementById('translateLang').value;
+                this.showMessage('Translating...', 'loading');
+
+                try {
+                    const response = await fetch(`/api/notes/${this.currentNote.id}/translate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ language: lang })
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json().catch(()=>({error:'Unknown error'}));
+                        throw new Error(err.error || 'Translation failed');
+                    }
+
+                    const data = await response.json();
+                    // Update editor fields with translated content
+                    document.getElementById('noteTitle').value = data.title || '';
+                    document.getElementById('noteContent').value = data.content || '';
+                    document.getElementById('editorTitle').textContent = data.title || '';
+
+                    // Update currentNote locally but keep original id
+                    this.currentNote.title = data.title;
+                    this.currentNote.content = data.content;
+
+                    this.showMessage('Translation applied to the editor. Save to persist.', 'success');
+                } catch (error) {
+                    this.showMessage(`Error translating note: ${error.message}`, 'error');
+                }
+            }
+
+            async deleteNote() {
+                if (!this.currentNote || !this.currentNote.id) return;
+
+                if (!confirm('Are you sure you want to delete this note?')) return;
+
+                try {
+                    const response = await fetch(`/api/notes/${this.currentNote.id}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (!response.ok) throw new Error('Failed to delete note');
+
+                    // Remove from notes array
+                    this.notes = this.notes.filter(n => n.id !== this.currentNote.id);
+                    this.renderNotesList();
+                    this.hideEditor();
+                    this.showMessage('Note deleted successfully!', 'success');
+                } catch (error) {
+                    this.showMessage(`Error deleting note: ${error.message}`, 'error');
+                }
+            }
+
+            searchNotes(query) {
+                const filteredNotes = query.trim() === '' ? this.notes : 
+                    this.notes.filter(note => 
+                        (note.title && note.title.toLowerCase().includes(query.toLowerCase())) ||
+                        (note.content && note.content.toLowerCase().includes(query.toLowerCase()))
+                    );
+
+                const notesList = document.getElementById('notesList');
+                if (filteredNotes.length === 0) {
+                    notesList.innerHTML = '<div class="empty-state"><p>No notes found matching your search.</p></div>';
+                    return;
+                }
+
+                notesList.innerHTML = filteredNotes.map(note => `
+                    <div class="note-item ${this.currentNote && this.currentNote.id === note.id ? 'active' : ''}" 
+                         data-note-id="${note.id}" onclick="noteTaker.selectNote(${note.id})">
+                        <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}</div>
+                        <div class="note-preview">${this.escapeHtml(note.content || 'No content')}</div>
+                        <div class="note-date">${this.formatDate(note.updated_at)}</div>
+                    </div>
+                `).join('');
+            }
+
+            showMessage(message, type) {
+                const messageArea = document.getElementById('messageArea');
+                messageArea.innerHTML = `<div class="${type}">${message}</div>`;
+                
+                if (type === 'success') {
+                    setTimeout(() => this.hideMessage(), 3000);
+                }
+            }
+
+            hideMessage() {
+                document.getElementById('messageArea').innerHTML = '';
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            formatDate(dateString) {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diffTime = Math.abs(now - date);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays === 1) {
+                    return 'Today';
+                } else if (diffDays === 2) {
+                    return 'Yesterday';
+                } else if (diffDays <= 7) {
+                    return `${diffDays - 1} days ago`;
+                } else {
+                    return date.toLocaleDateString();
+                }
+            }
+
+            // Generate Note Modal Methods
+            openGenerateModal() {
+                document.getElementById('generateModal').style.display = 'block';
+                document.getElementById('generateInput').value = '';
+                document.getElementById('generateLanguage').value = 'English';
+                document.getElementById('generatedPreview').classList.remove('show');
+                document.getElementById('generateBtn').style.display = '';
+                document.getElementById('confirmGenerate').style.display = 'none';
+                this.generatedNoteData = null;
+                document.getElementById('generateInput').focus();
+            }
+
+            closeGenerateModal() {
+                document.getElementById('generateModal').style.display = 'none';
+                this.generatedNoteData = null;
+            }
+
+            async generateNote() {
+                const input = document.getElementById('generateInput').value.trim();
+                const language = document.getElementById('generateLanguage').value;
+
+                if (!input) {
+                    this.showMessage('Please enter some text to generate a note', 'error');
+                    return;
+                }
+
+                // Show loading state
+                const generateBtn = document.getElementById('generateBtn');
+                const originalText = generateBtn.textContent;
+                generateBtn.textContent = 'Generating...';
+                generateBtn.disabled = true;
+
+                try {
+                    const response = await fetch('/api/notes/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            input: input,
+                            language: language
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({error: 'Unknown error'}));
+                        throw new Error(errorData.error || 'Failed to generate note');
+                    }
+
+                    this.generatedNoteData = await response.json();
+                    this.displayGeneratedPreview();
+
+                } catch (error) {
+                    this.showMessage(`Error generating note: ${error.message}`, 'error');
+                } finally {
+                    generateBtn.textContent = originalText;
+                    generateBtn.disabled = false;
+                }
+            }
+
+            displayGeneratedPreview() {
+                if (!this.generatedNoteData) return;
+
+                // Update preview content
+                document.getElementById('previewTitle').textContent = this.generatedNoteData.title || 'Untitled';
+                document.getElementById('previewContent').textContent = this.generatedNoteData.content || 'No content';
+                
+                // Update tags
+                const tagsContainer = document.getElementById('previewTags');
+                if (this.generatedNoteData.tags && this.generatedNoteData.tags.length > 0) {
+                    tagsContainer.innerHTML = this.generatedNoteData.tags.map(tag => 
+                        `<span class="preview-tag">${this.escapeHtml(tag)}</span>`
+                    ).join('');
+                } else {
+                    tagsContainer.innerHTML = '<span style="color: #999; font-style: italic;">No tags</span>';
+                }
+
+                // Update date field
+                const dateField = document.getElementById('previewDateField');
+                const dateValue = document.getElementById('previewDate');
+                if (this.generatedNoteData.event_date) {
+                    dateValue.textContent = this.generatedNoteData.event_date;
+                    dateField.style.display = 'block';
+                } else {
+                    dateField.style.display = 'none';
+                }
+
+                // Update time field
+                const timeField = document.getElementById('previewTimeField');
+                const timeValue = document.getElementById('previewTime');
+                if (this.generatedNoteData.event_time) {
+                    timeValue.textContent = this.generatedNoteData.event_time;
+                    timeField.style.display = 'block';
+                } else {
+                    timeField.style.display = 'none';
+                }
+
+                // Show preview and hide generate button, show confirm button
+                document.getElementById('generatedPreview').classList.add('show');
+                document.getElementById('generateBtn').style.display = 'none';
+                document.getElementById('confirmGenerate').style.display = '';
+            }
+
+            async confirmGeneratedNote() {
+                if (!this.generatedNoteData) return;
+
+                // Show loading state
+                const confirmBtn = document.getElementById('confirmGenerate');
+                const originalText = confirmBtn.textContent;
+                confirmBtn.textContent = 'Saving...';
+                confirmBtn.disabled = true;
+
+                try {
+                    // Save the generated note directly to the database
+                    const noteData = {
+                        title: this.generatedNoteData.title || 'Generated Note',
+                        content: this.generatedNoteData.content || '',
+                        tags: this.generatedNoteData.tags || [],
+                        event_date: this.generatedNoteData.event_date || null,
+                        event_time: this.generatedNoteData.event_time || null
+                    };
+
+                    const response = await fetch('/api/notes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(noteData)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({error: 'Unknown error'}));
+                        throw new Error(errorData.error || 'Failed to save note');
+                    }
+
+                    const savedNote = await response.json();
+
+                    // Close the modal
+                    this.closeGenerateModal();
+
+                    // Refresh the notes list to show the new note
+                    await this.loadNotes();
+
+                    // Select and display the newly created note
+                    this.selectNote(savedNote.id);
+
+                    // Show success message
+                    this.showMessage('Generated note saved successfully!', 'success');
+
+                } catch (error) {
+                    this.showMessage(`Error saving generated note: ${error.message}`, 'error');
+                } finally {
+                    confirmBtn.textContent = originalText;
+                    confirmBtn.disabled = false;
+                }
+            }
+        }
+
+        // Initialize the app
+        const noteTaker = new NoteTaker();
+    </script>
+</body>
+</html>
+
