@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from src.models.note import Note, db
+from translator import TranslationError, translate_note
 
 note_bp = Blueprint('note', __name__)
 
@@ -30,6 +31,59 @@ def get_note(note_id):
     """Get a specific note by ID"""
     note = Note.query.get_or_404(note_id)
     return jsonify(note.to_dict())
+
+
+@note_bp.route('/notes/<int:note_id>/translate', methods=['POST'])
+def translate_note_route(note_id):
+    """Translate a note without changing the stored note."""
+    note = Note.query.get_or_404(note_id)
+    data = request.get_json(silent=True) or {}
+    target_language = data.get('target_language')
+    source_language = data.get('source_language', 'auto')
+
+    if not isinstance(target_language, str) or not target_language.strip():
+        return jsonify({
+            'error': {
+                'code': 'invalid_request',
+                'message': 'target_language is required',
+            }
+        }), 400
+    if not isinstance(source_language, str) or not source_language.strip():
+        return jsonify({
+            'error': {
+                'code': 'invalid_request',
+                'message': 'source_language must be a non-empty string',
+            }
+        }), 400
+
+    try:
+        translation = translate_note(
+            title=note.title,
+            content=note.content,
+            source_language=source_language.strip(),
+            target_language=target_language.strip(),
+        )
+    except TranslationError as error:
+        return jsonify({
+            'error': {
+                'code': 'translation_failed',
+                'message': str(error),
+            }
+        }), 502
+    except Exception:
+        return jsonify({
+            'error': {
+                'code': 'translation_unavailable',
+                'message': 'The translation service is unavailable',
+            }
+        }), 502
+
+    return jsonify({
+        'note_id': note.id,
+        'source_language': source_language.strip(),
+        'target_language': target_language.strip(),
+        'translation': translation,
+    })
 
 @note_bp.route('/notes/<int:note_id>', methods=['PUT'])
 def update_note(note_id):

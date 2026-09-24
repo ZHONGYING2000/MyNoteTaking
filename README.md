@@ -9,6 +9,7 @@ A modern, responsive web application for managing personal notes with a beautifu
 - **Delete Notes**: Remove notes you no longer need
 - **Search Notes**: Find notes quickly by searching titles and content
 - **Auto-save**: Notes are automatically saved as you type
+- **Note Translation**: Translate a saved note into a selected language without changing the original
 - **Responsive Design**: Works perfectly on desktop and mobile devices
 - **Modern UI**: Beautiful gradient design with smooth animations
 - **Real-time Updates**: Instant feedback and updates
@@ -96,6 +97,30 @@ notetaking-app/
 - `PUT /api/notes/<id>` - Update a note
 - `DELETE /api/notes/<id>` - Delete a note
 - `GET /api/notes/search?q=<query>` - Search notes
+- `POST /api/notes/<id>/translate` - Translate a saved note and return a JSON preview
+
+Translation requests use the prompt in `prompts/translate_prompt.md` and accept:
+
+```json
+{
+   "source_language": "auto",
+   "target_language": "English"
+}
+```
+
+The successful response contains the translated title and content. Translation does not update the stored note:
+
+```json
+{
+   "note_id": 1,
+   "source_language": "auto",
+   "target_language": "English",
+   "translation": {
+      "title": "Translated title",
+      "content": "Translated content"
+   }
+}
+```
 
 ### Request/Response Format
 ```json
@@ -156,6 +181,8 @@ The application is configured for easy deployment with:
 ### Environment Variables
 - `FLASK_ENV`: Set to `development` for debug mode
 - `SECRET_KEY`: Flask secret key for sessions
+- `OPEN_ROUTER_KEY`: OpenRouter API key required by the translation feature
+- `OPENROUTER_MODEL`: Optional model override for translation requests
 
 ### Database Configuration
 - Database file: `src/database/app.db`
