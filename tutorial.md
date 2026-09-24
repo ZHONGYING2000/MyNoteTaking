@@ -124,7 +124,28 @@ OpenRouter 提供与 OpenAI 客户端兼容的接口，因此可以继续使用�
 client.chat.completions.create(...)
 ```
 
-## 6. 笔记翻译 API
+## 6. 文本翻译 API
+
+通用文本翻译接口不会保存或修改笔记：
+
+```http
+POST /api/translate
+Content-Type: application/json
+```
+
+请求体：
+
+```json
+{
+    "text": "Hello, world",
+    "source_language": "auto",
+    "target_language": "Chinese"
+}
+```
+
+响应中的 `translation` 是翻译后的纯文本。缺少 `text` 或 `target_language` 时返回 HTTP 400，上游 OpenRouter 调用失败时返回 HTTP 502。
+
+## 7. 笔记翻译 API
 
 提示词保存在项目根目录的 `prompts/translate_prompt.md`。保存后的笔记可以通过以下接口翻译，结果只作为预览返回，不会修改原笔记：
 
@@ -158,7 +179,7 @@ Content-Type: application/json
 
 模型返回的内容必须是包含 `title` 和 `content` 字符串字段的 JSON 对象。非法 JSON、字段缺失或上游服务失败时，API 返回 JSON 错误对象和 HTTP 502；缺少 `target_language` 时返回 HTTP 400。
 
-## 7. System Prompt 和 User Prompt
+## 8. System Prompt 和 User Prompt
 
 请求中的 messages 包含两条消息：
 
@@ -176,12 +197,12 @@ messages=[
 - `user` 消息包含文件化 prompt、源语言、目标语言、标题和正文。
 - 目标语言由 API 请求中的 `target_language` 字段决定。
 
-## 8. 默认模型和模型覆盖
+## 9. 默认模型和模型覆盖
 
 当前默认模型是：
 
 ```python
-DEFAULT_MODEL = "qwen/qwen3.8-27b:free"
+DEFAULT_MODEL = "deepseek/deepseek-v4-flash-0731"
 ```
 
 请求时会优先读取 `OPENROUTER_MODEL` 环境变量；如果没有设置，就使用默认模型：
@@ -211,7 +232,7 @@ python translator.py "Good morning"
 OPENROUTER_MODEL=another/model
 ```
 
-## 9. Provider Fallback
+## 10. Provider Fallback
 
 代码包含以下 OpenRouter 配置：
 
@@ -221,7 +242,7 @@ extra_body={"provider": {"allow_fallbacks": True}}
 
 当当前模型的某个上游 provider 暂时不可用或被限流时，OpenRouter 可以尝试其他 provider。它不能保证所有限流都能解决。如果整个免费模型池都达到额度，仍可能收到 HTTP `429` 错误，此时可以稍后重试、配置自己的 provider key，或切换到其他模型。
 
-## 10. 错误处理
+## 11. 错误处理
 
 `main()` 会捕获运行期间的异常，并通过 `argparse` 输出错误信息：
 

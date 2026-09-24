@@ -31,7 +31,8 @@ The application is deployed and accessible at: **https://3dhkilc88dkk.manus.spac
 - **Flask-CORS**: Cross-origin resource sharing support
 
 ### Database
-- **SQLite**: Lightweight, file-based database for data persistence
+- **Supabase PostgreSQL**: Hosted database for production deployments
+- **SQLite**: Lightweight, file-based fallback for local development
 
 ## 📁 Project Structure
 
@@ -98,6 +99,27 @@ notetaking-app/
 - `DELETE /api/notes/<id>` - Delete a note
 - `GET /api/notes/search?q=<query>` - Search notes
 - `POST /api/notes/<id>/translate` - Translate a saved note and return a JSON preview
+- `POST /api/translate` - Translate plain text without saving a note
+
+The plain text translation endpoint accepts:
+
+```json
+{
+   "text": "Hello, world",
+   "source_language": "auto",
+   "target_language": "Chinese"
+}
+```
+
+and returns:
+
+```json
+{
+   "source_language": "auto",
+   "target_language": "Chinese",
+   "translation": "你好，世界"
+}
+```
 
 Translation requests use the prompt in `prompts/translate_prompt.md` and accept:
 
@@ -158,15 +180,8 @@ The successful response contains the translated title and content. Translation d
 ## 🔒 Database Schema
 
 ### Notes Table
-```sql
-CREATE TABLE note (
-    id INTEGER PRIMARY KEY,
-    title VARCHAR(200) NOT NULL,
-    content TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-```
+
+The Supabase table definition is in [`database/supabase_notes.sql`](database/supabase_notes.sql). Run it in the Supabase SQL Editor before starting the application against Supabase.
 
 ## 🚀 Deployment
 
@@ -182,12 +197,14 @@ The application is configured for easy deployment with:
 - `FLASK_ENV`: Set to `development` for debug mode
 - `SECRET_KEY`: Flask secret key for sessions
 - `OPEN_ROUTER_KEY`: OpenRouter API key required by the translation feature
-- `OPENROUTER_MODEL`: Optional model override for translation requests
+- `OPENROUTER_MODEL`: Optional model override; defaults to `deepseek/deepseek-v4-flash-0731`
 
 ### Database Configuration
-- Database file: `src/database/app.db`
-- Automatic table creation on first run
-- SQLAlchemy ORM for database operations
+- Set `DATABASE_URL` to the Supabase PostgreSQL connection string in `.env`.
+- Copy `.env.example` to `.env` and replace the placeholder connection string.
+- The connection string can use either `postgresql://` or `postgres://`.
+- Without `DATABASE_URL`, the application uses `database/app.db` and creates local tables automatically.
+- SQLAlchemy ORM is used for database operations.
 
 ## 📱 Browser Compatibility
 

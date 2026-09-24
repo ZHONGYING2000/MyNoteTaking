@@ -4,6 +4,65 @@ from translator import TranslationError, translate_note
 
 note_bp = Blueprint('note', __name__)
 
+@note_bp.route('/translate', methods=['POST'])
+def translate_text():
+    """Translate plain text without creating or changing a note."""
+    data = request.get_json(silent=True) or {}
+    text = data.get('text')
+    target_language = data.get('target_language')
+    source_language = data.get('source_language', 'auto')
+
+    if not isinstance(text, str) or not text.strip():
+        return jsonify({
+            'error': {
+                'code': 'invalid_request',
+                'message': 'text is required',
+            }
+        }), 400
+    if not isinstance(target_language, str) or not target_language.strip():
+        return jsonify({
+            'error': {
+                'code': 'invalid_request',
+                'message': 'target_language is required',
+            }
+        }), 400
+    if not isinstance(source_language, str) or not source_language.strip():
+        return jsonify({
+            'error': {
+                'code': 'invalid_request',
+                'message': 'source_language must be a non-empty string',
+            }
+        }), 400
+
+    try:
+        translation = translate_note(
+            title='',
+            content=text,
+            source_language=source_language.strip(),
+            target_language=target_language.strip(),
+        )
+    except TranslationError as error:
+        return jsonify({
+            'error': {
+                'code': 'translation_failed',
+                'message': str(error),
+            }
+        }), 502
+    except Exception:
+        return jsonify({
+            'error': {
+                'code': 'translation_unavailable',
+                'message': 'The translation service is unavailable',
+            }
+        }), 502
+
+    return jsonify({
+        'source_language': source_language.strip(),
+        'target_language': target_language.strip(),
+        'translation': translation['content'],
+    })
+
+
 @note_bp.route('/notes', methods=['GET'])
 def get_notes():
     """Get all notes, ordered by most recently updated"""

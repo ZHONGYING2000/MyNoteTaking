@@ -399,7 +399,6 @@
                         <label class="form-label" for="targetLanguage">Translate to</label>
                         <input class="form-input" id="targetLanguage" value="English" placeholder="e.g. English">
                     </div>
-                    <div class="translation-result" id="translationResult" style="display: none;"></div>
                 </div>
 
                 <div class="empty-state" id="emptyState">
@@ -493,7 +492,6 @@
                 document.getElementById('noteTitle').value = note.title || '';
                 document.getElementById('noteContent').value = note.content || '';
                 document.getElementById('editorTitle').textContent = note.title || 'Untitled Note';
-                document.getElementById('translationResult').style.display = 'none';
             }
 
             createNewNote() {
@@ -509,7 +507,6 @@
                 document.getElementById('noteTitle').value = '';
                 document.getElementById('noteContent').value = '';
                 document.getElementById('editorTitle').textContent = 'New Note';
-                document.getElementById('translationResult').style.display = 'none';
                 document.getElementById('noteTitle').focus();
                 
                 // Remove active state from all notes
@@ -537,7 +534,6 @@
                 document.getElementById('editorForm').style.display = 'none';
                 document.getElementById('editorActions').style.display = 'none';
                 document.getElementById('editorTitle').textContent = 'Select a note to edit';
-                document.getElementById('translationResult').style.display = 'none';
                 this.currentNote = null;
             }
 
@@ -565,10 +561,11 @@
                         throw new Error(result.error?.message || 'Translation failed');
                     }
 
-                    const translationResult = document.getElementById('translationResult');
-                    translationResult.innerHTML = `<strong>${this.escapeHtml(result.target_language)}</strong><pre>${this.escapeHtml(JSON.stringify(result.translation, null, 2))}</pre>`;
-                    translationResult.style.display = 'block';
-                    this.showMessage('Translation completed. The original note was not changed.', 'success');
+                    document.getElementById('noteTitle').value = result.translation.title;
+                    document.getElementById('noteContent').value = result.translation.content;
+                    document.getElementById('editorTitle').textContent =
+                        result.translation.title || 'Untitled Note';
+                    this.showMessage('Translation completed. Review the text and save the note.', 'success');
                 } catch (error) {
                     this.showMessage(`Error translating note: ${error.message}`, 'error');
                 } finally {
