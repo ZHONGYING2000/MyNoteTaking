@@ -189,6 +189,29 @@ The Flask application and static frontend are served by a Vercel Python Function
    - `OPENROUTER_MODEL`: optional model override.
 3. Deploy or redeploy the project. The frontend, API routes, and translation prompt are included in the deployment.
 
+### Note Attachments
+
+Attachments are stored in the private Neon Object Storage bucket declared in `neon.ts`; they are not written to Vercel's temporary filesystem. Each file is limited to 4 MB. To enable uploads:
+
+1. Sign in to the Neon CLI, then review and apply the bucket configuration to the linked branch:
+   ```bash
+   neon auth
+   neon config plan
+   neon deploy
+   ```
+2. Pull the storage credentials into the local environment file:
+   ```bash
+   neon env pull --service object-storage --file .env.local
+   ```
+3. Add these variables to the Vercel project's Production environment:
+   - `AWS_ACCESS_KEY_ID`
+   - `AWS_SECRET_ACCESS_KEY`
+   - `AWS_ENDPOINT_URL_S3`
+   - `AWS_REGION`
+4. Redeploy the Vercel project so the function receives the new environment variables.
+
+The `neon deploy` command applies infrastructure changes to the branch selected in `.neon`. Review `neon config plan` before applying it. The application creates attachment metadata in PostgreSQL and redirects downloads to short-lived signed URLs for the private bucket.
+
 For local development, omit `DATABASE_URL` to use `database/app.db` with SQLite.
 
 ## 🔧 Configuration

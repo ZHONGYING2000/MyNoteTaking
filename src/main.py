@@ -3,12 +3,13 @@ import sys
 # DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from flask import Flask, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 from src.models.user import db
 from src.routes.user import user_bp
 from src.routes.note import note_bp
+from src.models.attachment import Attachment
 from src.models.note import Note
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
@@ -16,6 +17,7 @@ load_dotenv(os.path.join(ROOT_DIR, '.env.local'))
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-only-change-me')
+app.config['ATTACHMENTS_BUCKET'] = os.getenv('NEON_STORAGE_BUCKET', 'note-attachments')
 
 # Enable CORS for all routes
 CORS(app)
@@ -41,6 +43,20 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 with app.app_context():
     db.create_all()
+
+@app.before_request
+def limit_attachment_upload_size():
+    if request.endpoint == 'note.upload_note_attachment':
+        request.max_content_length = 4 * 1024 * 1024 + 64 * 1024
+
+@app.errorhandler(413)
+def request_entity_too_large(_error):
+    return jsonify({
+        'error': {
+            'code': 'file_too_large',
+            'message': 'Each uploaded file must be 4 MB or smaller',
+        }
+    }), 413
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')

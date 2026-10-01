@@ -181,7 +181,7 @@ messages=[
 当前默认模型是：
 
 ```python
-DEFAULT_MODEL = "qwen/qwen3.8-27b:free"
+DEFAULT_MODEL = "deepseek/deepseek-v4-flash"
 ```
 
 请求时会优先读取 `OPENROUTER_MODEL` 环境变量；如果没有设置，就使用默认模型：
