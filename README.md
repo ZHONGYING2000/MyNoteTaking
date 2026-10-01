@@ -80,12 +80,19 @@ notetaking-app/
    pip install -r requirements.txt
    ```
 
-4. **Run the application**
+4. **(Optional) Connect Supabase PostgreSQL**
+   Create a Supabase project, then copy its PostgreSQL connection string from **Connect**. Put it in the project-root `.env.local` file:
+   ```env
+   DATABASE_URL=postgresql://postgres:<YOUR_DATABASE_PASSWORD>@<YOUR_SUPABASE_HOST>:5432/postgres?sslmode=require
+   ```
+   Use the connection string Supabase provides for your network; if direct connections are unavailable, choose a pooler connection. The app converts `postgresql://` to the installed `psycopg` SQLAlchemy driver automatically. `.env.local` is ignored by Git. Do not put a Supabase `anon` or `service_role` API key in `DATABASE_URL`.
+
+5. **Run the application**
    ```bash
    python src/main.py
    ```
 
-5. **Access the application**
+6. **Access the application**
    - Open your browser and go to `http://localhost:5001`
 
 ## 📡 API Endpoints
@@ -170,11 +177,19 @@ CREATE TABLE note (
 
 ## 🚀 Deployment
 
-The application is configured for easy deployment with:
-- CORS enabled for cross-origin requests
-- Host binding to `0.0.0.0` for external access
-- Production-ready Flask configuration
-- Persistent SQLite database
+### Deploy to Vercel
+
+The Flask application and static frontend are served by a Vercel Python Function. Vercel's function filesystem is ephemeral, so configure a PostgreSQL database (for example, Neon or Supabase) rather than relying on the local SQLite database for production data.
+
+1. Push the project to GitHub and import the repository in Vercel. Keep the project root as the Root Directory; Vercel uses `api/index.py` as the function entry point.
+2. Add these environment variables in the Vercel project settings:
+   - `DATABASE_URL`: PostgreSQL connection string from your database provider.
+   - `SECRET_KEY`: a long, randomly generated secret.
+   - `OPEN_ROUTER_KEY`: required for note translation.
+   - `OPENROUTER_MODEL`: optional model override.
+3. Deploy or redeploy the project. The frontend, API routes, and translation prompt are included in the deployment.
+
+For local development, omit `DATABASE_URL` to use `database/app.db` with SQLite.
 
 ## 🔧 Configuration
 
@@ -185,9 +200,8 @@ The application is configured for easy deployment with:
 - `OPENROUTER_MODEL`: Optional model override for translation requests
 
 ### Database Configuration
-- Database file: `src/database/app.db`
-- Automatic table creation on first run
-- SQLAlchemy ORM for database operations
+- Set `DATABASE_URL` in `.env.local` to use Supabase PostgreSQL; without it, the app uses local SQLite at `database/app.db`.
+- Tables are created automatically on startup, and note queries use SQLAlchemy ORM for either database.
 
 ## 📱 Browser Compatibility
 
