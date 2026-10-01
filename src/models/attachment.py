@@ -6,7 +6,7 @@ from src.models.user import db
 class Attachment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     note_id = db.Column(
-        db.Integer, db.ForeignKey('note.id', ondelete='CASCADE'), nullable=False, index=True
+        db.Integer, db.ForeignKey('notes.id', ondelete='CASCADE'), nullable=False, index=True
     )
     filename = db.Column(db.String(255), nullable=False)
     object_key = db.Column(db.String(512), nullable=False, unique=True)
