@@ -102,7 +102,9 @@ def get_note(note_id):
 @note_bp.route('/notes/<int:note_id>/attachments', methods=['GET'])
 def get_note_attachments(note_id):
     note = Note.query.get_or_404(note_id)
-    return jsonify([attachment.to_dict() for attachment in note.attachments])
+    response = jsonify([attachment.to_dict() for attachment in note.attachments])
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
 
 @note_bp.route('/notes/<int:note_id>/attachments', methods=['POST'])

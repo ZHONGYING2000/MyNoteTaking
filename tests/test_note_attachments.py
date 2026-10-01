@@ -38,6 +38,11 @@ class NoteAttachmentTests(unittest.TestCase):
         storage = Mock()
         get_s3_client.return_value = storage
 
+        initial_listing = self.client.get(f'/api/notes/{self.note_id}/attachments')
+        self.assertEqual(initial_listing.status_code, 200)
+        self.assertEqual(initial_listing.get_json(), [])
+        self.assertEqual(initial_listing.headers['Cache-Control'], 'no-store')
+
         response = self.upload_file(filename='旅行 照片.png')
 
         self.assertEqual(response.status_code, 201)

@@ -637,7 +637,9 @@
                 this.attachments = [];
                 this.renderAttachments();
                 try {
-                    const response = await fetch(`/api/notes/${noteId}/attachments`);
+                    const response = await fetch(`/api/notes/${noteId}/attachments`, {
+                        cache: 'no-store'
+                    });
                     if (!response.ok) throw new Error('Failed to load attachments');
                     this.attachments = await response.json();
                     this.renderAttachments();
