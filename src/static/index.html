@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NoteTaker - Your Personal Note Manager</title>
+    <title>LinaBell Notes - A little garden for your thoughts</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <style>
         * {
@@ -54,21 +54,20 @@
 
         .sidebar {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 22px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             height: fit-content;
         }
 
         .note-editor {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
 
         .search-box {
@@ -294,6 +293,20 @@
             white-space: nowrap;
         }
 
+        .attachment-remove {
+            border: 0;
+            background: transparent;
+            color: #a94f5a;
+            cursor: pointer;
+            font: inherit;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .attachment-remove:hover {
+            text-decoration: underline;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
@@ -413,19 +426,336 @@
         }
 
         .notes-list::-webkit-scrollbar-thumb:hover {
-            background: #5a6fd8;
-        }
+                background: #5a6fd8;
+            }
+
+            :root {
+                --ink: #3b302d;
+                --muted: #7d706c;
+                --forest: #326c52;
+                --forest-dark: #254e3c;
+                --leaf: #72a47e;
+                --rose: #d87f91;
+                --rose-dark: #b85d73;
+                --petal: #f8e6e6;
+                --paper: #fffdf9;
+                --line: #e8d9d0;
+            }
+
+            body {
+                font-family: 'Avenir Next', Avenir, 'Trebuchet MS', sans-serif;
+                color: var(--ink);
+                background-color: #edf4eb;
+                background-image:
+                    repeating-linear-gradient(128deg, rgba(50, 108, 82, 0.035) 0 1px, transparent 1px 30px),
+                    linear-gradient(125deg, #f8eee7 0%, #edf5eb 52%, #f8e9e9 100%);
+            }
+
+            .header {
+                margin: 4px 0 24px;
+                padding: 0 0 17px 4px;
+                    display: grid;
+                    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+                    align-items: center;
+                    gap: 28px;
+                text-align: left;
+                color: var(--forest-dark);
+                border-bottom: 1px solid rgba(50, 108, 82, 0.2);
+            }
+
+                .header-art {
+                    display: block;
+                    width: 100%;
+                    aspect-ratio: 1597 / 1169;
+                    object-fit: cover;
+                    border: 1px solid rgba(50, 108, 82, 0.18);
+                    border-radius: 8px;
+                    box-shadow: 0 8px 20px rgba(54, 78, 56, 0.14);
+                }
+
+            .header h1,
+            .editor-title {
+                font-family: Georgia, 'Times New Roman', serif;
+                color: var(--forest-dark);
+            }
+
+            .header h1 {
+                font-size: 2.2rem;
+                line-height: 1.15;
+                margin-bottom: 5px;
+                text-shadow: none;
+            }
+
+            .header p {
+                color: var(--muted);
+                opacity: 1;
+            }
+
+            .main-content {
+                grid-template-columns: minmax(250px, 0.82fr) minmax(0, 2fr);
+                gap: 22px;
+            }
+
+            .sidebar,
+            .note-editor {
+                background: rgba(255, 253, 249, 0.95);
+                border: 1px solid rgba(232, 217, 208, 0.9);
+                border-radius: 8px;
+                box-shadow: 0 12px 30px rgba(81, 71, 57, 0.08);
+                backdrop-filter: none;
+            }
+
+            .search-box,
+            .form-input,
+            .form-textarea {
+                border: 1px solid var(--line);
+                border-radius: 6px;
+                background: var(--paper);
+                color: var(--ink);
+                transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            }
+
+            .search-box:focus,
+            .form-input:focus,
+            .form-textarea:focus {
+                border-color: var(--leaf);
+                box-shadow: 0 0 0 3px rgba(114, 164, 126, 0.16);
+            }
+
+            .new-note-btn {
+                border-radius: 6px;
+                background: var(--rose);
+            }
+
+            .new-note-btn:hover {
+                background: var(--rose-dark);
+                box-shadow: none;
+            }
+
+            .note-item {
+                border-radius: 6px;
+                background: #f8f5ef;
+            }
+
+            .note-item:hover {
+                border-color: #d8b7ad;
+            }
+
+            .note-item.active {
+                border-color: var(--rose);
+                background: #fbefed;
+            }
+
+            .note-title,
+            .form-label {
+                color: var(--ink);
+            }
+
+            .note-preview,
+            .attachment-help,
+            .attachment-empty,
+            .attachment-size,
+            .attachment-pending,
+            .empty-state,
+            .loading {
+                color: var(--muted);
+            }
+
+            .btn {
+                border-radius: 6px;
+            }
+
+            .btn-save {
+                background: var(--forest);
+            }
+
+            .btn-save:hover {
+                background: var(--forest-dark);
+            }
+
+            .btn-delete {
+                background: #bd6670;
+            }
+
+            .btn-delete:hover {
+                background: #a94f5a;
+            }
+
+            .btn-translate {
+                background: #8295ad;
+            }
+
+            .btn-translate:hover {
+                background: #687e99;
+            }
+
+            .attachment-section {
+                border-color: var(--line);
+            }
+
+            .btn-attachment {
+                background: var(--petal);
+                color: var(--rose-dark);
+            }
+
+            .attachment-row {
+                border-color: #f0e8df;
+            }
+
+            .attachment-download {
+                color: var(--forest);
+            }
+
+            .error {
+                background: #fae4e4;
+                color: #80434b;
+                border-color: #edc7c7;
+            }
+
+            .success {
+                background: #e5f1e5;
+                color: #315c42;
+                border-color: #cde2d0;
+            }
+
+            .notes-list::-webkit-scrollbar-track {
+                background: #f4eee8;
+            }
+
+            .notes-list::-webkit-scrollbar-thumb {
+                background: var(--leaf);
+            }
+
+            .notes-list::-webkit-scrollbar-thumb:hover {
+                background: var(--forest);
+            }
+
+            @media (max-width: 768px) {
+                .container {
+                    padding: 16px;
+                }
+
+                .sidebar,
+                .note-editor {
+                    padding: 18px;
+                }
+
+                .header h1 {
+                    font-size: 1.8rem;
+                }
+
+                .header {
+                    grid-template-columns: minmax(0, 1fr);
+                    gap: 16px;
+                    padding-left: 0;
+                }
+
+                .header-art {
+                    width: min(100%, 420px);
+                }
+
+                .editor-header {
+                    align-items: flex-start;
+                    flex-direction: column;
+                    gap: 12px;
+                }
+
+                .editor-actions {
+                    flex-wrap: wrap;
+                }
+            }
+
+            .header {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) 148px 54px;
+                align-items: center;
+                gap: 12px;
+                min-height: 118px;
+                margin: 0 0 18px;
+                padding: 8px 4px 14px;
+            }
+
+            .header-copy {
+                min-width: 0;
+            }
+
+            .header-fox,
+            .header-butterfly,
+            .sidebar-bear {
+                display: block;
+                object-fit: contain;
+                pointer-events: none;
+                user-select: none;
+            }
+
+            .header-fox {
+                width: 148px;
+                height: 124px;
+            }
+
+            .header-butterfly {
+                width: 52px;
+                height: 52px;
+                transform: rotate(-12deg);
+            }
+
+            .sidebar-heading {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                min-height: 72px;
+                margin-bottom: 8px;
+            }
+
+            .sidebar-heading h2 {
+                color: var(--forest-dark);
+                font-family: Georgia, 'Times New Roman', serif;
+                font-size: 1.2rem;
+            }
+
+            .sidebar-bear {
+                width: 46px;
+                height: 72px;
+                margin-right: 6px;
+            }
+
+            @media (max-width: 768px) {
+                .header {
+                    grid-template-columns: minmax(0, 1fr) 94px 40px;
+                    gap: 6px;
+                    min-height: 94px;
+                    padding-right: 0;
+                }
+
+                .header-fox {
+                    width: 94px;
+                    height: 92px;
+                }
+
+                .header-butterfly {
+                    width: 38px;
+                    height: 38px;
+                }
+            }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📝 NoteTaker</h1>
-            <p>Organize your thoughts, capture your ideas</p>
+            <div class="header-copy">
+                <h1>🦊 LinaBell Notes</h1>
+                <p>A little garden for your thoughts</p>
+            </div>
+            <img class="header-fox" src="/linabell-sticker.png" alt="玲娜贝儿" width="1548" height="1300">
+            <img class="header-butterfly" src="/butterfly-sticker.png" alt="蝴蝶" width="1095" height="1059">
         </div>
 
         <div class="main-content">
             <div class="sidebar">
+                <div class="sidebar-heading">
+                    <h2>My notes</h2>
+                    <img class="sidebar-bear" src="/bear-sticker.png" alt="熊" width="735" height="1246">
+                </div>
                 <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search notes...">
                 <button class="new-note-btn" id="newNoteBtn">✨ New Note</button>
                 
@@ -464,7 +794,7 @@
                                 <div class="attachment-help">Images and files, up to 4 MB each.</div>
                             </div>
                             <button class="btn btn-attachment" id="addAttachmentBtn" type="button">📎 Add files</button>
-                            <input id="attachmentInput" type="file" multiple hidden>
+                            <input id="attachmentInput" type="file" hidden>
                         </div>
                         <ul class="attachment-list" id="attachmentList" aria-live="polite"></ul>
                     </section>
@@ -496,6 +826,7 @@
                 this.attachments = [];
                 this.pendingFiles = [];
                 this.isLoading = false;
+                this.messageTimeout = null;
                 this.init();
             }
 
@@ -515,6 +846,12 @@
                 document.getElementById('attachmentInput').addEventListener('change', (event) => {
                     this.handleAttachmentSelection(event.target.files);
                     event.target.value = '';
+                });
+                document.getElementById('attachmentList').addEventListener('click', (event) => {
+                    const removeButton = event.target.closest('[data-remove-attachment]');
+                    if (!removeButton) return;
+                    const attachmentId = removeButton.dataset.removeAttachment;
+                    this.removeAttachment(attachmentId === 'pending' ? null : Number(attachmentId));
                 });
                 document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
                 
@@ -573,6 +910,7 @@
                 const note = this.notes.find(n => n.id === noteId);
                 if (!note) return;
 
+                this.hideMessage();
                 this.currentNote = note;
                 this.showEditor();
                 this.renderNotesList(); // Re-render to update active state
@@ -585,6 +923,7 @@
             }
 
             createNewNote() {
+                this.hideMessage();
                 this.currentNote = {
                     id: null,
                     title: '',
@@ -637,7 +976,9 @@
                 this.attachments = [];
                 this.renderAttachments();
                 try {
-                    const response = await fetch(`/api/notes/${noteId}/attachments`);
+                    const response = await fetch(`/api/notes/${noteId}/attachments`, {
+                        cache: 'no-store'
+                    });
                     if (!response.ok) throw new Error('Failed to load attachments');
                     this.attachments = await response.json();
                     this.renderAttachments();
@@ -650,11 +991,14 @@
                 const attachmentList = document.getElementById('attachmentList');
                 if (!attachmentList) return;
 
+                const hasAttachment = this.attachments.length > 0 || this.pendingFiles.length > 0;
+                document.getElementById('addAttachmentBtn').hidden = hasAttachment;
                 const savedItems = this.attachments.map(attachment => `
                     <li class="attachment-row">
                         <span class="attachment-name">${this.escapeHtml(attachment.filename)}</span>
                         <span class="attachment-size">${this.formatFileSize(attachment.size)}</span>
                         <a class="attachment-download" href="/api/notes/${this.currentNote.id}/attachments/${attachment.id}/download" download>Download</a>
+                        <button class="attachment-remove" type="button" data-remove-attachment="${attachment.id}">Remove</button>
                     </li>
                 `);
                 const pendingItems = this.pendingFiles.map(file => `
@@ -662,6 +1006,7 @@
                         <span class="attachment-name">${this.escapeHtml(file.name)}</span>
                         <span class="attachment-size">${this.formatFileSize(file.size)}</span>
                         <span class="attachment-pending">Pending</span>
+                        <button class="attachment-remove" type="button" data-remove-attachment="pending">Remove</button>
                     </li>
                 `);
                 const items = [...savedItems, ...pendingItems];
@@ -674,14 +1019,49 @@
                 const files = Array.from(fileList);
                 if (!files.length) return;
 
-                if (this.currentNote && this.currentNote.id) {
-                    await this.uploadAttachments(files);
+                const file = files[0];
+                if (file.size > 4 * 1024 * 1024) {
+                    this.showMessage('File is too large. Maximum size is 4 MB.', 'error');
+                    return;
+                }
+                if (this.attachments.length || this.pendingFiles.length) {
+                    this.showMessage('Remove the current file before adding another.', 'error');
                     return;
                 }
 
-                this.pendingFiles.push(...files);
+                this.pendingFiles = [file];
                 this.renderAttachments();
                 this.showMessage('Files will upload when you save this note.', 'success');
+            }
+
+            async removeAttachment(attachmentId) {
+                if (attachmentId === null) {
+                    this.pendingFiles = [];
+                    this.renderAttachments();
+                    this.hideMessage();
+                    return;
+                }
+                if (!this.currentNote || !this.currentNote.id) return;
+
+                try {
+                    const response = await fetch(
+                        `/api/notes/${this.currentNote.id}/attachments/${attachmentId}`,
+                        { method: 'DELETE' }
+                    );
+                    if (!response.ok) {
+                        const result = await response.json();
+                        throw new Error(typeof result.error === 'string'
+                            ? result.error
+                            : result.error?.message || 'Unable to remove attachment');
+                    }
+                    this.attachments = this.attachments.filter(
+                        attachment => attachment.id !== attachmentId
+                    );
+                    this.renderAttachments();
+                    this.showMessage('Attachment removed.', 'success');
+                } catch (error) {
+                    this.showMessage(`Error removing attachment: ${error.message}`, 'error');
+                }
             }
 
             async uploadAttachments(files) {
@@ -824,7 +1204,7 @@
                     if (!isAutoSave) {
                         this.showMessage('Note saved successfully!', 'success');
                     }
-                    if (this.pendingFiles.length) {
+                    if (this.pendingFiles.length && !isAutoSave) {
                         const filesToUpload = this.pendingFiles;
                         this.pendingFiles = [];
                         await this.uploadAttachments(filesToUpload);
@@ -880,15 +1260,24 @@
             }
 
             showMessage(message, type) {
+                if (this.messageTimeout !== null) {
+                    clearTimeout(this.messageTimeout);
+                    this.messageTimeout = null;
+                }
+
                 const messageArea = document.getElementById('messageArea');
                 messageArea.innerHTML = `<div class="${type}">${message}</div>`;
                 
                 if (type === 'success') {
-                    setTimeout(() => this.hideMessage(), 3000);
+                    this.messageTimeout = setTimeout(() => this.hideMessage(), 3000);
                 }
             }
 
             hideMessage() {
+                if (this.messageTimeout !== null) {
+                    clearTimeout(this.messageTimeout);
+                    this.messageTimeout = null;
+                }
                 document.getElementById('messageArea').innerHTML = '';
             }
 

@@ -1,7 +1,7 @@
-from urllib.parse import quote
+from io import BytesIO
 from uuid import uuid4
 
-from flask import Blueprint, current_app, jsonify, redirect, request
+from flask import Blueprint, current_app, jsonify, request, send_file
 
 from src.models.attachment import Attachment
 from src.models.note import Note, db
@@ -10,6 +10,7 @@ from translator import TranslationError, translate_note
 
 note_bp = Blueprint('note', __name__)
 MAX_ATTACHMENT_SIZE = 4 * 1024 * 1024
+MAX_ATTACHMENTS_PER_NOTE = 1
 
 @note_bp.route('/translate', methods=['POST'])
 def translate_text():
@@ -102,12 +103,23 @@ def get_note(note_id):
 @note_bp.route('/notes/<int:note_id>/attachments', methods=['GET'])
 def get_note_attachments(note_id):
     note = Note.query.get_or_404(note_id)
-    return jsonify([attachment.to_dict() for attachment in note.attachments])
+    response = jsonify([attachment.to_dict() for attachment in note.attachments])
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
 
 @note_bp.route('/notes/<int:note_id>/attachments', methods=['POST'])
 def upload_note_attachment(note_id):
     note = Note.query.get_or_404(note_id)
+    attachment_count = Attachment.query.filter_by(note_id=note.id).count()
+    if attachment_count >= MAX_ATTACHMENTS_PER_NOTE:
+        return jsonify({
+            'error': {
+                'code': 'attachment_limit_reached',
+                'message': 'Each note can have only one attachment',
+            }
+        }), 409
+
     uploaded_file = request.files.get('file')
     if uploaded_file is None or not uploaded_file.filename:
         return jsonify({'error': 'A file is required'}), 400
@@ -176,25 +188,54 @@ def download_note_attachment(note_id, attachment_id):
 
     try:
         storage = get_s3_client()
-        download_url = storage.generate_presigned_url(
-            'get_object',
-            Params={
-                'Bucket': current_app.config['ATTACHMENTS_BUCKET'],
-                'Key': attachment.object_key,
-                'ResponseContentDisposition': (
-                    f"attachment; filename*=UTF-8''{quote(attachment.filename, safe='')}"
-                ),
-                'ResponseContentType': 'application/octet-stream',
-            },
-            ExpiresIn=300,
+        stored_object = storage.get_object(
+            Bucket=current_app.config['ATTACHMENTS_BUCKET'],
+            Key=attachment.object_key,
         )
+        file_content = stored_object['Body'].read()
     except StorageConfigurationError:
         return jsonify({'error': 'Attachment storage is not configured'}), 503
     except Exception:
-        current_app.logger.exception('Failed to create attachment download URL')
+        current_app.logger.exception('Failed to download note attachment')
         return jsonify({'error': 'Unable to download attachment'}), 502
 
-    return redirect(download_url, code=302)
+    response = send_file(
+        BytesIO(file_content),
+        mimetype='application/octet-stream',
+        as_attachment=True,
+        download_name=attachment.filename,
+        max_age=0,
+    )
+    response.headers['Cache-Control'] = 'no-store'
+    return response
+
+
+@note_bp.route(
+    '/notes/<int:note_id>/attachments/<int:attachment_id>', methods=['DELETE']
+)
+def delete_note_attachment(note_id, attachment_id):
+    Note.query.get_or_404(note_id)
+    attachment = Attachment.query.filter_by(
+        id=attachment_id, note_id=note_id
+    ).first_or_404()
+
+    try:
+        storage = get_s3_client()
+        storage.delete_object(
+            Bucket=current_app.config['ATTACHMENTS_BUCKET'],
+            Key=attachment.object_key,
+        )
+        db.session.delete(attachment)
+        db.session.commit()
+    except StorageConfigurationError:
+        db.session.rollback()
+        return jsonify({'error': 'Attachment storage is not configured'}), 503
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('Failed to delete note attachment')
+        return jsonify({'error': 'Unable to delete attachment'}), 502
+
+    return '', 204
 
 
 @note_bp.route('/notes/<int:note_id>/translate', methods=['POST'])
