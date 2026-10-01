@@ -110,3 +110,6 @@ Thumbs.db
 .coverage
 coverage.xml
 *.prof
+.vercel
+.env*
+node_modules/

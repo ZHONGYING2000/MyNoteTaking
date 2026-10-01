@@ -9,7 +9,7 @@ from openai import OpenAI
 
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-DEFAULT_MODEL = "openai/gpt-4o-mini"
+DEFAULT_MODEL = "deepseek/deepseek-v4-flash-0731"
 PROMPT_PATH = Path(__file__).resolve().parent / "prompts" / "translate_prompt.md"
 
 load_dotenv()

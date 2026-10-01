@@ -31,7 +31,8 @@ The application is deployed and accessible at: **https://3dhkilc88dkk.manus.spac
 - **Flask-CORS**: Cross-origin resource sharing support
 
 ### Database
-- **SQLite**: Lightweight, file-based database for data persistence
+- **Supabase PostgreSQL**: Hosted database for production deployments
+- **SQLite**: Lightweight, file-based fallback for local development
 
 ## 📁 Project Structure
 
@@ -80,12 +81,19 @@ notetaking-app/
    pip install -r requirements.txt
    ```
 
-4. **Run the application**
+4. **(Optional) Connect Supabase PostgreSQL**
+   Create a Supabase project, then copy its PostgreSQL connection string from **Connect**. Put it in the project-root `.env.local` file:
+   ```env
+   DATABASE_URL=postgresql://postgres:<YOUR_DATABASE_PASSWORD>@<YOUR_SUPABASE_HOST>:5432/postgres?sslmode=require
+   ```
+   Use the connection string Supabase provides for your network; if direct connections are unavailable, choose a pooler connection. The app converts `postgresql://` to the installed `psycopg` SQLAlchemy driver automatically. `.env.local` is ignored by Git. Do not put a Supabase `anon` or `service_role` API key in `DATABASE_URL`.
+
+5. **Run the application**
    ```bash
    python src/main.py
    ```
 
-5. **Access the application**
+6. **Access the application**
    - Open your browser and go to `http://localhost:5001`
 
 ## 📡 API Endpoints
@@ -98,6 +106,27 @@ notetaking-app/
 - `DELETE /api/notes/<id>` - Delete a note
 - `GET /api/notes/search?q=<query>` - Search notes
 - `POST /api/notes/<id>/translate` - Translate a saved note and return a JSON preview
+- `POST /api/translate` - Translate plain text without saving a note
+
+The plain text translation endpoint accepts:
+
+```json
+{
+   "text": "Hello, world",
+   "source_language": "auto",
+   "target_language": "Chinese"
+}
+```
+
+and returns:
+
+```json
+{
+   "source_language": "auto",
+   "target_language": "Chinese",
+   "translation": "你好，世界"
+}
+```
 
 Translation requests use the prompt in `prompts/translate_prompt.md` and accept:
 
@@ -158,23 +187,47 @@ The successful response contains the translated title and content. Translation d
 ## 🔒 Database Schema
 
 ### Notes Table
-```sql
-CREATE TABLE note (
-    id INTEGER PRIMARY KEY,
-    title VARCHAR(200) NOT NULL,
-    content TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-```
+
+The Supabase table definition is in [`database/supabase_notes.sql`](database/supabase_notes.sql). Run it in the Supabase SQL Editor before starting the application against Supabase.
 
 ## 🚀 Deployment
 
-The application is configured for easy deployment with:
-- CORS enabled for cross-origin requests
-- Host binding to `0.0.0.0` for external access
-- Production-ready Flask configuration
-- Persistent SQLite database
+### Deploy to Vercel
+
+The Flask application and static frontend are served by a Vercel Python Function. Vercel's function filesystem is ephemeral, so configure a PostgreSQL database (for example, Neon or Supabase) rather than relying on the local SQLite database for production data.
+
+1. Push the project to GitHub and import the repository in Vercel. Keep the project root as the Root Directory; Vercel uses `api/index.py` as the function entry point.
+2. Add these environment variables in the Vercel project settings:
+   - `DATABASE_URL`: PostgreSQL connection string from your database provider.
+   - `SECRET_KEY`: a long, randomly generated secret.
+   - `OPEN_ROUTER_KEY`: required for note translation.
+   - `OPENROUTER_MODEL`: optional model override.
+3. Deploy or redeploy the project. The frontend, API routes, and translation prompt are included in the deployment.
+
+### Note Attachments
+
+Attachments are stored in the private Neon Object Storage bucket declared in `neon.ts`; they are not written to Vercel's temporary filesystem. Each file is limited to 4 MB. To enable uploads:
+
+1. Sign in to the Neon CLI, then review and apply the bucket configuration to the linked branch:
+   ```bash
+   neon auth
+   neon config plan
+   neon deploy
+   ```
+2. Pull the storage credentials into the local environment file:
+   ```bash
+   neon env pull --service object-storage --file .env.local
+   ```
+3. Add these variables to the Vercel project's Production environment:
+   - `AWS_ACCESS_KEY_ID`
+   - `AWS_SECRET_ACCESS_KEY`
+   - `AWS_ENDPOINT_URL_S3`
+   - `AWS_REGION`
+4. Redeploy the Vercel project so the function receives the new environment variables.
+
+The `neon deploy` command applies infrastructure changes to the branch selected in `.neon`. Review `neon config plan` before applying it. The application creates attachment metadata in PostgreSQL and redirects downloads to short-lived signed URLs for the private bucket.
+
+For local development, omit `DATABASE_URL` to use `database/app.db` with SQLite.
 
 ## 🔧 Configuration
 
@@ -182,12 +235,13 @@ The application is configured for easy deployment with:
 - `FLASK_ENV`: Set to `development` for debug mode
 - `SECRET_KEY`: Flask secret key for sessions
 - `OPEN_ROUTER_KEY`: OpenRouter API key required by the translation feature
-- `OPENROUTER_MODEL`: Optional model override for translation requests
+- `OPENROUTER_MODEL`: Optional model override; defaults to `deepseek/deepseek-v4-flash-0731`
 
 ### Database Configuration
-- Database file: `src/database/app.db`
-- Automatic table creation on first run
-- SQLAlchemy ORM for database operations
+- Set `DATABASE_URL` in `.env.local` to use Supabase PostgreSQL; without it, the app uses local SQLite at `database/app.db`.
+- PostgreSQL URLs may use either `postgresql://` or `postgres://`.
+- Tables are created automatically on startup, and note queries use SQLAlchemy ORM for either database.
+- SQLAlchemy ORM is used for database operations.
 
 ## 📱 Browser Compatibility
 

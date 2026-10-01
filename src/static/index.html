@@ -108,9 +108,11 @@
         .notes-list {
             max-height: 500px;
             overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .note-item {
+            min-width: 0;
             padding: 15px;
             border: 2px solid transparent;
             border-radius: 10px;
@@ -122,7 +124,6 @@
 
         .note-item:hover {
             border-color: #667eea;
-            transform: translateX(5px);
         }
 
         .note-item.active {
@@ -131,6 +132,7 @@
         }
 
         .note-title {
+            overflow-wrap: anywhere;
             font-weight: 600;
             font-size: 16px;
             margin-bottom: 5px;
@@ -138,6 +140,8 @@
         }
 
         .note-preview {
+            max-height: 2.8em;
+            overflow-wrap: anywhere;
             font-size: 14px;
             color: #666;
             line-height: 1.4;
@@ -217,19 +221,77 @@
             margin-top: 20px;
         }
 
-        .translation-result {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #d9e2ec;
-            border-radius: 10px;
-            background: #f7f9fc;
+        .translation-controls .form-label {
+            margin-bottom: 0;
+            white-space: nowrap;
         }
 
-        .translation-result pre {
-            margin: 0;
-            white-space: pre-wrap;
-            word-break: break-word;
-            font-family: inherit;
+        .translation-controls select {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .attachment-section {
+            margin-top: 24px;
+            padding-top: 18px;
+            border-top: 1px solid #e1e5e9;
+        }
+
+        .attachment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .attachment-header .form-label {
+            margin-bottom: 4px;
+        }
+
+        .attachment-help,
+        .attachment-empty {
+            color: #777;
+            font-size: 13px;
+        }
+
+        .btn-attachment {
+            background: #eef1ff;
+            color: #3949ab;
+            flex: 0 0 auto;
+        }
+
+        .attachment-list {
+            list-style: none;
+            margin-top: 12px;
+        }
+
+        .attachment-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+            padding: 10px 0;
+            border-bottom: 1px solid #edf0f2;
+        }
+
+        .attachment-name {
+            flex: 1;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .attachment-size,
+        .attachment-pending {
+            color: #777;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .attachment-download {
+            color: #3949ab;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
         }
 
         .form-group {
@@ -395,11 +457,27 @@
                         <textarea class="form-textarea" id="noteContent" placeholder="Start writing your note..."></textarea>
                     </div>
 
+                    <section class="attachment-section" aria-labelledby="attachmentHeading">
+                        <div class="attachment-header">
+                            <div>
+                                <label class="form-label" id="attachmentHeading" for="attachmentInput">Attachments</label>
+                                <div class="attachment-help">Images and files, up to 4 MB each.</div>
+                            </div>
+                            <button class="btn btn-attachment" id="addAttachmentBtn" type="button">📎 Add files</button>
+                            <input id="attachmentInput" type="file" multiple hidden>
+                        </div>
+                        <ul class="attachment-list" id="attachmentList" aria-live="polite"></ul>
+                    </section>
+
                     <div class="translation-controls">
                         <label class="form-label" for="targetLanguage">Translate to</label>
-                        <input class="form-input" id="targetLanguage" value="English" placeholder="e.g. English">
+                        <select class="form-input" id="targetLanguage">
+                            <option value="Chinese">中文</option>
+                            <option value="English" selected>English</option>
+                            <option value="Japanese">日本語</option>
+                            <option value="Korean">한국어</option>
+                        </select>
                     </div>
-                    <div class="translation-result" id="translationResult" style="display: none;"></div>
                 </div>
 
                 <div class="empty-state" id="emptyState">
@@ -415,6 +493,8 @@
             constructor() {
                 this.notes = [];
                 this.currentNote = null;
+                this.attachments = [];
+                this.pendingFiles = [];
                 this.isLoading = false;
                 this.init();
             }
@@ -429,6 +509,13 @@
                 document.getElementById('saveBtn').addEventListener('click', () => this.saveNote());
                 document.getElementById('translateBtn').addEventListener('click', () => this.translateNote());
                 document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
+                document.getElementById('addAttachmentBtn').addEventListener('click', () => {
+                    document.getElementById('attachmentInput').click();
+                });
+                document.getElementById('attachmentInput').addEventListener('change', (event) => {
+                    this.handleAttachmentSelection(event.target.files);
+                    event.target.value = '';
+                });
                 document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
                 
                 // Auto-save on content change (debounced)
@@ -493,7 +580,8 @@
                 document.getElementById('noteTitle').value = note.title || '';
                 document.getElementById('noteContent').value = note.content || '';
                 document.getElementById('editorTitle').textContent = note.title || 'Untitled Note';
-                document.getElementById('translationResult').style.display = 'none';
+                this.pendingFiles = [];
+                await this.loadAttachments(note.id);
             }
 
             createNewNote() {
@@ -509,7 +597,9 @@
                 document.getElementById('noteTitle').value = '';
                 document.getElementById('noteContent').value = '';
                 document.getElementById('editorTitle').textContent = 'New Note';
-                document.getElementById('translationResult').style.display = 'none';
+                this.attachments = [];
+                this.pendingFiles = [];
+                this.renderAttachments();
                 document.getElementById('noteTitle').focus();
                 
                 // Remove active state from all notes
@@ -537,8 +627,110 @@
                 document.getElementById('editorForm').style.display = 'none';
                 document.getElementById('editorActions').style.display = 'none';
                 document.getElementById('editorTitle').textContent = 'Select a note to edit';
-                document.getElementById('translationResult').style.display = 'none';
                 this.currentNote = null;
+                this.attachments = [];
+                this.pendingFiles = [];
+                this.renderAttachments();
+            }
+
+            async loadAttachments(noteId) {
+                this.attachments = [];
+                this.renderAttachments();
+                try {
+                    const response = await fetch(`/api/notes/${noteId}/attachments`);
+                    if (!response.ok) throw new Error('Failed to load attachments');
+                    this.attachments = await response.json();
+                    this.renderAttachments();
+                } catch (error) {
+                    this.showMessage(`Error loading attachments: ${error.message}`, 'error');
+                }
+            }
+
+            renderAttachments() {
+                const attachmentList = document.getElementById('attachmentList');
+                if (!attachmentList) return;
+
+                const savedItems = this.attachments.map(attachment => `
+                    <li class="attachment-row">
+                        <span class="attachment-name">${this.escapeHtml(attachment.filename)}</span>
+                        <span class="attachment-size">${this.formatFileSize(attachment.size)}</span>
+                        <a class="attachment-download" href="/api/notes/${this.currentNote.id}/attachments/${attachment.id}/download" download>Download</a>
+                    </li>
+                `);
+                const pendingItems = this.pendingFiles.map(file => `
+                    <li class="attachment-row">
+                        <span class="attachment-name">${this.escapeHtml(file.name)}</span>
+                        <span class="attachment-size">${this.formatFileSize(file.size)}</span>
+                        <span class="attachment-pending">Pending</span>
+                    </li>
+                `);
+                const items = [...savedItems, ...pendingItems];
+                attachmentList.innerHTML = items.length
+                    ? items.join('')
+                    : '<li class="attachment-empty">No attachments yet.</li>';
+            }
+
+            async handleAttachmentSelection(fileList) {
+                const files = Array.from(fileList);
+                if (!files.length) return;
+
+                if (this.currentNote && this.currentNote.id) {
+                    await this.uploadAttachments(files);
+                    return;
+                }
+
+                this.pendingFiles.push(...files);
+                this.renderAttachments();
+                this.showMessage('Files will upload when you save this note.', 'success');
+            }
+
+            async uploadAttachments(files) {
+                if (!this.currentNote || !this.currentNote.id) {
+                    this.pendingFiles.push(...files);
+                    this.renderAttachments();
+                    return;
+                }
+
+                const failedFiles = [];
+                this.showMessage('Uploading attachments...', 'loading');
+                for (const file of files) {
+                    if (file.size > 4 * 1024 * 1024) {
+                        failedFiles.push(file);
+                        continue;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    try {
+                        const response = await fetch(
+                            `/api/notes/${this.currentNote.id}/attachments`,
+                            { method: 'POST', body: formData }
+                        );
+                        const result = await response.json();
+                        if (!response.ok) {
+                            throw new Error(typeof result.error === 'string'
+                                ? result.error
+                                : result.error?.message || 'Upload failed');
+                        }
+                        this.attachments.push(result);
+                    } catch (error) {
+                        failedFiles.push(file);
+                    }
+                }
+
+                this.pendingFiles.push(...failedFiles);
+                this.renderAttachments();
+                if (failedFiles.length) {
+                    this.showMessage('Some files could not be uploaded. Check the 4 MB limit and storage settings.', 'error');
+                } else {
+                    this.showMessage('Attachments uploaded successfully.', 'success');
+                }
+            }
+
+            formatFileSize(size) {
+                if (size < 1024) return `${size} B`;
+                if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+                return `${(size / (1024 * 1024)).toFixed(1)} MB`;
             }
 
             async translateNote() {
@@ -565,10 +757,10 @@
                         throw new Error(result.error?.message || 'Translation failed');
                     }
 
-                    const translationResult = document.getElementById('translationResult');
-                    translationResult.innerHTML = `<strong>${this.escapeHtml(result.target_language)}</strong><pre>${this.escapeHtml(JSON.stringify(result.translation, null, 2))}</pre>`;
-                    translationResult.style.display = 'block';
-                    this.showMessage('Translation completed. The original note was not changed.', 'success');
+                    document.getElementById('noteTitle').value = result.translation.title;
+                    document.getElementById('noteContent').value = result.translation.content;
+                    document.getElementById('editorTitle').textContent = result.translation.title || 'Untitled Note';
+                    this.showMessage('Translation filled in the fields. Save to update this note.', 'success');
                 } catch (error) {
                     this.showMessage(`Error translating note: ${error.message}`, 'error');
                 } finally {
@@ -582,7 +774,7 @@
                 const title = document.getElementById('noteTitle').value.trim();
                 const content = document.getElementById('noteContent').value.trim();
 
-                if (!title && !content) {
+                if (!title && !content && this.pendingFiles.length === 0) {
                     if (!isAutoSave) {
                         this.showMessage('Please enter a title or content', 'error');
                     }
@@ -631,6 +823,11 @@
                     
                     if (!isAutoSave) {
                         this.showMessage('Note saved successfully!', 'success');
+                    }
+                    if (this.pendingFiles.length) {
+                        const filesToUpload = this.pendingFiles;
+                        this.pendingFiles = [];
+                        await this.uploadAttachments(filesToUpload);
                     }
                 } catch (error) {
                     this.showMessage(`Error saving note: ${error.message}`, 'error');
