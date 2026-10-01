@@ -56,6 +56,38 @@ class NoteAttachmentTests(unittest.TestCase):
         self.assertEqual(listing.get_json()[0]['id'], attachment['id'])
 
     @patch.object(note_routes, 'get_s3_client')
+    def test_note_rejects_a_second_attachment(self, get_s3_client):
+        storage = Mock()
+        get_s3_client.return_value = storage
+        first = self.upload_file()
+        second = self.upload_file(filename='second.png')
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(second.status_code, 409)
+        self.assertEqual(second.get_json()['error']['code'], 'attachment_limit_reached')
+        storage.put_object.assert_called_once()
+
+    @patch.object(note_routes, 'get_s3_client')
+    def test_removing_attachment_deletes_object_and_metadata(self, get_s3_client):
+        storage = Mock()
+        get_s3_client.return_value = storage
+        upload = self.upload_file()
+        attachment = upload.get_json()
+        object_key = storage.put_object.call_args.kwargs['Key']
+
+        response = self.client.delete(
+            f"/api/notes/{self.note_id}/attachments/{attachment['id']}"
+        )
+
+        self.assertEqual(response.status_code, 204)
+        storage.delete_object.assert_called_once_with(
+            Bucket='note-attachments',
+            Key=object_key,
+        )
+        listing = self.client.get(f'/api/notes/{self.note_id}/attachments')
+        self.assertEqual(listing.get_json(), [])
+
+    @patch.object(note_routes, 'get_s3_client')
     def test_download_returns_file_from_storage(self, get_s3_client):
         storage = Mock()
         storage.get_object.return_value = {'Body': io.BytesIO(b'image bytes')}
