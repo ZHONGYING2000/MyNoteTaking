@@ -3,7 +3,6 @@ import unittest
 from unittest.mock import Mock, patch
 
 from src.main import app
-from src.models.attachment import Attachment
 from src.models.note import Note, db
 import src.routes.note as note_routes
 
@@ -57,20 +56,26 @@ class NoteAttachmentTests(unittest.TestCase):
         self.assertEqual(listing.get_json()[0]['id'], attachment['id'])
 
     @patch.object(note_routes, 'get_s3_client')
-    def test_download_redirects_to_signed_url(self, get_s3_client):
+    def test_download_returns_file_from_storage(self, get_s3_client):
         storage = Mock()
-        storage.generate_presigned_url.return_value = 'https://storage.example/signed'
+        storage.get_object.return_value = {'Body': io.BytesIO(b'image bytes')}
         get_s3_client.return_value = storage
         upload = self.upload_file()
         attachment_id = upload.get_json()['id']
+        object_key = storage.put_object.call_args.kwargs['Key']
 
         response = self.client.get(
             f'/api/notes/{self.note_id}/attachments/{attachment_id}/download'
         )
 
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.headers['Location'], 'https://storage.example/signed')
-        self.assertEqual(storage.generate_presigned_url.call_args.kwargs['ExpiresIn'], 300)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, b'image bytes')
+        self.assertEqual(response.headers['Content-Type'], 'application/octet-stream')
+        self.assertIn('attachment; filename=image.png', response.headers['Content-Disposition'])
+        storage.get_object.assert_called_once_with(
+            Bucket='note-attachments',
+            Key=object_key,
+        )
 
     def test_upload_rejects_files_over_limit(self):
         response = self.upload_file(content=b'x' * (4 * 1024 * 1024 + 1))

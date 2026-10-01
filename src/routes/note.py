@@ -1,7 +1,7 @@
-from urllib.parse import quote
+from io import BytesIO
 from uuid import uuid4
 
-from flask import Blueprint, current_app, jsonify, redirect, request
+from flask import Blueprint, current_app, jsonify, request, send_file
 
 from src.models.attachment import Attachment
 from src.models.note import Note, db
@@ -178,25 +178,26 @@ def download_note_attachment(note_id, attachment_id):
 
     try:
         storage = get_s3_client()
-        download_url = storage.generate_presigned_url(
-            'get_object',
-            Params={
-                'Bucket': current_app.config['ATTACHMENTS_BUCKET'],
-                'Key': attachment.object_key,
-                'ResponseContentDisposition': (
-                    f"attachment; filename*=UTF-8''{quote(attachment.filename, safe='')}"
-                ),
-                'ResponseContentType': 'application/octet-stream',
-            },
-            ExpiresIn=300,
+        stored_object = storage.get_object(
+            Bucket=current_app.config['ATTACHMENTS_BUCKET'],
+            Key=attachment.object_key,
         )
+        file_content = stored_object['Body'].read()
     except StorageConfigurationError:
         return jsonify({'error': 'Attachment storage is not configured'}), 503
     except Exception:
-        current_app.logger.exception('Failed to create attachment download URL')
+        current_app.logger.exception('Failed to download note attachment')
         return jsonify({'error': 'Unable to download attachment'}), 502
 
-    return redirect(download_url, code=302)
+    response = send_file(
+        BytesIO(file_content),
+        mimetype='application/octet-stream',
+        as_attachment=True,
+        download_name=attachment.filename,
+        max_age=0,
+    )
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
 
 @note_bp.route('/notes/<int:note_id>/translate', methods=['POST'])
